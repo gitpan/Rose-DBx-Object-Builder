@@ -12,8 +12,8 @@ use Lingua::EN::Inflect 'PL';
 use Regexp::Common;
 use DBI;
 
-our $VERSION = 0.01;
-# 5.3
+our $VERSION = 0.02;
+# 6.4
 
 sub config
 {
@@ -94,19 +94,26 @@ sub config
 		my $config = shift;
 		foreach my $hash (keys %{$config})
 		{
-			foreach my $key (keys %{$config->{$hash}})
+			if (ref $config->{$hash} eq 'HASH')
 			{
-				if (ref $config->{$hash}->{$key} eq 'HASH')
+				foreach my $key (keys %{$config->{$hash}})
 				{
-					foreach my $sub_key (keys %{$config->{$hash}->{$key}})
+					if (ref $config->{$hash}->{$key} eq 'HASH')
 					{
-						$self->{CONFIG}->{$hash}->{$key}->{$sub_key} = $config->{$hash}->{$key}->{$sub_key};
+						foreach my $sub_key (keys %{$config->{$hash}->{$key}})
+						{
+							$self->{CONFIG}->{$hash}->{$key}->{$sub_key} = $config->{$hash}->{$key}->{$sub_key};
+						}
+					}
+					else
+					{
+						$self->{CONFIG}->{$hash}->{$key} = $config->{$hash}->{$key};
 					}
 				}
-				else
-				{
-					$self->{CONFIG}->{$hash}->{$key} = $config->{$hash}->{$key};
-				}
+			}
+			else
+			{
+				$self->{CONFIG}->{$hash} = $config->{$hash};
 			}
 		}
 	}
@@ -624,7 +631,7 @@ generates:
    total INTEGER
   ) TYPE=INNODB;
 
-It is possible to define "has a" relationships between objects recurively in one sentence, although it may become convoluted. For example:
+It is possible to define "has a" relationships between objects recursively in one sentence, although it may become convoluted. For example:
 
   'Employee has first name, last name, email, and position (has title, description, and classification (has category and sub category)).'
 
@@ -694,6 +701,6 @@ Xufeng (Danny) Liang (danny.glue@gmail.com)
 
 =head1 COPYRIGHT & LICENSE
 
-Copyright 2008 Xufeng (Danny) Liang, All Rights Reserved.
+Copyright 2009 Xufeng (Danny) Liang, All Rights Reserved.
 
 This program is free software; you can redistribute it and/or modify it under the same terms as Perl itself.
