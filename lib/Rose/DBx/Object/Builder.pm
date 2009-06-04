@@ -12,7 +12,7 @@ use Lingua::EN::Inflect 'PL';
 use Regexp::Common;
 use DBI;
 
-our $VERSION = 0.02;
+our $VERSION = 0.03;
 # 6.4
 
 sub config
