@@ -7,3 +7,6 @@ Revision history for Rose-DBx-Object-Builder
         Fixed typos in POD.
 0.03    04/06/2009
         Updated change log.
+0.04    25/06/2009
+        Make the space character before '(...)' constructs optional.
+        Fixed Typos in POD.

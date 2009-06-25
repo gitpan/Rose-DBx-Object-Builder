@@ -12,8 +12,8 @@ use Lingua::EN::Inflect 'PL';
 use Regexp::Common;
 use DBI;
 
-our $VERSION = 0.03;
-# 6.4
+our $VERSION = 0.04;
+# 7.5
 
 sub config
 {
@@ -318,7 +318,7 @@ sub _has_a
 	
 	while ($columns =~ /[()]/)
 	{
-		($foreign_table_name, $foreign_table_columns) = ($columns =~ /([\w_\-0-9\s]+)\s+($RE{balanced}{-parens=>'()'})/);		
+		($foreign_table_name, $foreign_table_columns) = ($columns =~ /([\w_\-0-9\s]+)\s*($RE{balanced}{-parens=>'()'})/);		
 		($foreign_table_columns) = ($foreign_table_columns =~ /\((.*)\)/);
 		
 		if($foreign_table_columns =~ /^\s*(has|have)/)
@@ -605,7 +605,7 @@ C<parse> accepts a text string and returns the generated database table schemas.
 
 =item "... has ..."
 
-The "has" keyword can be used to define object attributes, i.e. the columns of a table, seperated by commas. For instance:
+The "has" keyword can be used to define object attributes, i.e. the columns of a table, separated by commas. For instance:
 
   'Employee has first name, last name, and email'
 
@@ -619,7 +619,7 @@ The above expression is equivalent to:
 
 The '(reference)' clause indicates that the attribute 'position ID' is a foreign key.
 
-We can explicitly asssign a column definition to an attribute, which ultimately determines the data type of the column. For instance:
+We can explicitly assign a column definition to an attribute, which ultimately determines the data type of the column. For instance:
 
   'Product has name and total (integer).'
 
@@ -635,7 +635,7 @@ It is possible to define "has a" relationships between objects recursively in on
 
   'Employee has first name, last name, email, and position (has title, description, and classification (has category and sub category)).'
 
-The word "has" and "have" are interchangable in Builder.
+The word "has" and "have" are interchangeable in Builder.
 
 =item "... has many ..."
 
@@ -649,7 +649,7 @@ generates:
   
   ALTER TABLE location ADD FOREIGN KEY (company_id) REFERENCES company (id) ON UPDATE CASCADE ON DELETE CASCADE;
 
-In essense, the "has many" keyword creates a foreign key in the corresponding table.
+In essence, the "has many" keyword creates a foreign key in the corresponding table.
   
 =item "... has many ... and vice versa"
 
