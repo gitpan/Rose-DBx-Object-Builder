@@ -10,3 +10,7 @@ Revision history for Rose-DBx-Object-Builder
 0.04    25/06/2009
         Make the space character before '(...)' constructs optional.
         Fixed Typos in POD.
+0.05    10/08/2009
+        Added the 'table_prefix' option into config.
+        Fixed foreign key column naming in "... has ... as ..." construct.
+        Updated POD.

@@ -12,8 +12,8 @@ use Lingua::EN::Inflect 'PL';
 use Regexp::Common;
 use DBI;
 
-our $VERSION = 0.04;
-# 7.5
+our $VERSION = 0.05;
+# 7.6
 
 sub config
 {
@@ -68,6 +68,7 @@ sub config
 			},
 			add_clause => 'ALTER TABLE [% table_name %] ADD [% clause %];',
 			map_table => '[% table_name %]_[% foreign_table_name %]_map',
+			table_prefix => '',
 			columns => {
 				name => 'VARCHAR(255)',
 				unique => 'VARCHAR(255) UNIQUE',
@@ -168,7 +169,7 @@ sub parse
 		{
 			my $schema;
 			if ($expression =~ /\s+as\s+/)
-			{
+			{   
 				$schema = _as ($config, $expression);
 			}
 			elsif ($expression =~ /vice[\s\-]+versa/)
@@ -180,7 +181,7 @@ sub parse
 				$schema = _has_many ($config, $expression);			
 			}
 			else
-			{
+			{    
 				$schema = _has_a ($config, $expression);
 			}
 			$self->{SCHEMA} .= $schema if $schema;
@@ -218,6 +219,7 @@ sub _as
 	return unless $table_name && $foreign_table_name && $foreign_key;
 	$table_name = _normalise_table($config, $config->{format}->{table}->($table_name));
 	$foreign_table_name = _normalise_table($config, $config->{format}->{table}->($foreign_table_name));
+	$foreign_key = $config->{format}->{column}->($foreign_key);
 	$foreign_key = $config->{foreign_key}->{singular} ? _singularise($foreign_key) : $foreign_key;
 	$foreign_key .= $config->{foreign_key}->{suffix};
 	
@@ -307,7 +309,7 @@ sub _has_a
 {
 	my $config = shift;
 	my $expression = $config->{format}->{expression}->(shift);
-	my ($table_name, $has, $columns) = ($expression =~ /([\w_\-0-9\s]+)\s+(has|have)\s*(.*)/);
+	my ($table_name, $has, $columns) = ($expression =~ /^([\w_\-0-9\s]+)\s+(has|have)\s+(.*)$/);
 	return unless $table_name && $columns;	
 	
 	my ($schema, $foreign_keys, $foreign_table_name, $foreign_table_columns, $custom_columns);
@@ -430,8 +432,8 @@ sub _generate_foreign_key_clause
 sub _normalise_table
 {
 	my ($config, $table) = @_;
-	return _singularise($table) if $config->{db}->{tables_are_singular};
-	return Lingua::EN::Inflect::PL(_singularise($table));
+	return $config->{table_prefix} . _singularise($table) if $config->{db}->{tables_are_singular};
+	return $config->{table_prefix} . Lingua::EN::Inflect::PL(_singularise($table));
 }
 
 1;
@@ -574,6 +576,10 @@ This option defines the ALTER TABLE statement to add foreign keys for 'has many'
 
 This option defines table name of the mapping table when generating many to many relationships, which is defaulted to C<[% table_name %]_[% foreign_table_name %]_map>.
 
+=head3 C<table_prefix>  
+
+Use this option to specify a prefix for table names.
+
 =head3 C<columns>
 
 Builder has a list of built-in column definitions, which are essentially attribute name to column data type mappings. The default list of columns can be retrieved by:
@@ -599,7 +605,7 @@ generates:
  
 =head2 C<parse>
 
-C<parse> accepts a text string and returns the generated database table schemas. The input text string could be a series of sentences (delimited by periods) in one of the following construct:
+C<parse> accepts a text string and returns the generated database table schemas. The input text string could be a series of sentences (delimited by periods) in one of the following constructs:
 
 =over
 
