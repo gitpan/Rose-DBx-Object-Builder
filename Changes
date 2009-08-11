@@ -14,3 +14,5 @@ Revision history for Rose-DBx-Object-Builder
         Added the 'table_prefix' option into config.
         Fixed foreign key column naming in "... has ... as ..." construct.
         Updated POD.
+0.06    11/08/2009
+        Fixed column definition for 'percentage'.

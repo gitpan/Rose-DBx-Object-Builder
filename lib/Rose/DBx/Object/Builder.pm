@@ -12,8 +12,8 @@ use Lingua::EN::Inflect 'PL';
 use Regexp::Common;
 use DBI;
 
-our $VERSION = 0.05;
-# 7.6
+our $VERSION = 0.06;
+# 8.6
 
 sub config
 {
@@ -84,7 +84,7 @@ sub config
 		
 		$self->{CONFIG}->{columns}->{title} = $self->{CONFIG}->{columns}->{name};
 		$self->{CONFIG}->{columns}->{description} = $self->{CONFIG}->{columns}->{text};
-		$self->{CONFIG}->{columns}->{percentage} = $self->{CONFIG}->{columns}->{numeric};
+		$self->{CONFIG}->{columns}->{percentage} = $self->{CONFIG}->{columns}->{number};
 		$self->{CONFIG}->{columns}->{cost} = $self->{CONFIG}->{columns}->{money};
 		$self->{CONFIG}->{columns}->{price} = $self->{CONFIG}->{columns}->{money};
 		$self->{CONFIG}->{columns}->{username} = $self->{CONFIG}->{columns}->{unique};

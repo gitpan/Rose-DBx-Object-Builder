@@ -1,6 +1,6 @@
 --- #YAML:1.0
 name: Rose-DBx-Object-Builder
-version: 0.05
+version: 0.06
 author:
   - Xufeng (Danny) Liang <danny.glue@gmail.com>
 abstract: Database Table Schema Generation for Rose::DB::Object
