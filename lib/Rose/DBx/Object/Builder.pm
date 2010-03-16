@@ -12,8 +12,8 @@ use Lingua::EN::Inflect 'PL';
 use Regexp::Common;
 use DBI;
 
-our $VERSION = 0.06;
-# 8.6
+our $VERSION = 0.07;
+# 9.8
 
 sub config
 {
@@ -21,7 +21,16 @@ sub config
 	unless ($self && defined $self->{CONFIG})
 	{
 		$self->{CONFIG} = {
-			db => {name => undef, type => 'mysql', host => '127.0.0.1', port => undef, username => 'root', password => 'root', tables_are_singular => undef, options => {RaiseError => 0, PrintError => 0, AutoCommit => 1}},
+			db => {
+				name => undef, 
+				type => 'mysql', 
+				host => '127.0.0.1', 
+				port => undef, 
+				username => 'root', 
+				password => 'root', 
+				tables_are_singular => undef,
+				table_prefix => '',
+				options => {RaiseError => 0, PrintError => 0, AutoCommit => 1}},
 			format => {
 				expression => sub {
 					my $expression = lc(shift);
@@ -68,7 +77,6 @@ sub config
 			},
 			add_clause => 'ALTER TABLE [% table_name %] ADD [% clause %];',
 			map_table => '[% table_name %]_[% foreign_table_name %]_map',
-			table_prefix => '',
 			columns => {
 				name => 'VARCHAR(255)',
 				unique => 'VARCHAR(255) UNIQUE',
@@ -432,8 +440,8 @@ sub _generate_foreign_key_clause
 sub _normalise_table
 {
 	my ($config, $table) = @_;
-	return $config->{table_prefix} . _singularise($table) if $config->{db}->{tables_are_singular};
-	return $config->{table_prefix} . Lingua::EN::Inflect::PL(_singularise($table));
+	return $config->{db}->{table_prefix} . _singularise($table) if $config->{db}->{tables_are_singular};
+	return $config->{db}->{table_prefix} . Lingua::EN::Inflect::PL(_singularise($table));
 }
 
 1;
@@ -512,7 +520,7 @@ This method accepts a hashref for configuring the Builder instance.
 
 The C<db> option configures database related settings, for instance:
 
-  $renderer->config({
+  $builder->config({
     db => {
       name => 'product',
       type => 'Pg', # defaulted to 'mysql'
@@ -521,6 +529,7 @@ The C<db> option configures database related settings, for instance:
       username => 'admin',
       password => 'password',
       tables_are_singular => 1,  # table name conventions, defaulted to undef
+      table_prefix => 'test_', # specify a prefix for table names
       options => {RaiseError => 1} # database connection options
     }
   });
@@ -575,10 +584,6 @@ This option defines the ALTER TABLE statement to add foreign keys for 'has many'
 =head3 C<map_table>
 
 This option defines table name of the mapping table when generating many to many relationships, which is defaulted to C<[% table_name %]_[% foreign_table_name %]_map>.
-
-=head3 C<table_prefix>  
-
-Use this option to specify a prefix for table names.
 
 =head3 C<columns>
 
