@@ -12,14 +12,12 @@ use Lingua::EN::Inflect 'PL';
 use Regexp::Common;
 use DBI;
 
-our $VERSION = 0.07;
-# 9.8
+our $VERSION = 0.08;
+# 11.9
 
-sub config
-{
+sub config {
 	my $self = shift;
-	unless ($self && defined $self->{CONFIG})
-	{
+	unless ($self && defined $self->{CONFIG}) {
 		$self->{CONFIG} = {
 			db => {
 				name => undef, 
@@ -98,30 +96,22 @@ sub config
 		$self->{CONFIG}->{columns}->{username} = $self->{CONFIG}->{columns}->{unique};
 	}
 	
-	if (@_)
-	{
+	if (@_) {
 		my $config = shift;
-		foreach my $hash (keys %{$config})
-		{
-			if (ref $config->{$hash} eq 'HASH')
-			{
-				foreach my $key (keys %{$config->{$hash}})
-				{
-					if (ref $config->{$hash}->{$key} eq 'HASH')
-					{
-						foreach my $sub_key (keys %{$config->{$hash}->{$key}})
-						{
+		foreach my $hash (keys %{$config}) {
+			if (ref $config->{$hash} eq 'HASH') {
+				foreach my $key (keys %{$config->{$hash}}) {
+					if (ref $config->{$hash}->{$key} eq 'HASH') {
+						foreach my $sub_key (keys %{$config->{$hash}->{$key}}) {
 							$self->{CONFIG}->{$hash}->{$key}->{$sub_key} = $config->{$hash}->{$key}->{$sub_key};
 						}
 					}
-					else
-					{
+					else {
 						$self->{CONFIG}->{$hash}->{$key} = $config->{$hash}->{$key};
 					}
 				}
 			}
-			else
-			{
+			else {
 				$self->{CONFIG}->{$hash} = $config->{$hash};
 			}
 		}
@@ -130,16 +120,14 @@ sub config
 	return $self->{CONFIG};
 }
 
-sub build
-{
+sub build {
 	my $self = shift;
 	my $dbh = shift;
 	my $config = $self->config;
 	my $schema = $self->parse;
 	return unless $schema;
 
-	unless ($dbh)
-	{
+	unless ($dbh) {
 		die "Database name missing" unless $config->{db}->{name};
 		my $host;
 	 	$host = 'host='. $config->{db}->{host} if $config->{db}->{host};
@@ -149,15 +137,13 @@ sub build
 	}
 	
 	eval {	
-		foreach my $sql (split /;/, $schema)
-		{
+		foreach my $sql (split /;/, $schema) {
 			$dbh->do($sql) or warn "Error executing SQL: $sql;\n";
 		}
 		$dbh->commit unless $config->{db}->{options}->{AutoCommit};
 	};
 
-	if ($@)
-	{
+	if ($@) {
 		warn "Transaction aborted: $@";
 		eval {$dbh->rollback};
   	}
@@ -165,50 +151,40 @@ sub build
 	$dbh->disconnect or die "Error closing database: $config->{db}->{name}\n";
 }
 
-sub parse
-{
+sub parse {
 	my $self = shift;
 	my $string = shift;
 
-	if ($string)
-	{
+	if ($string) {
 		my $config = $self->config;
-		foreach my $expression (split /\./, $string)
-		{
+		foreach my $expression (split /\./, $string) {
 			my $schema;
-			if ($expression =~ /\s+as\s+/)
-			{   
+			if ($expression =~ /\s+as\s+/) {   
 				$schema = _as ($config, $expression);
 			}
-			elsif ($expression =~ /vice[\s\-]+versa/)
-			{
+			elsif ($expression =~ /vice[\s\-]+versa/) {
 				$schema = _many_to_many ($config, $expression);
 			}
-			elsif ($expression =~ /(has|have)\s+many/)
-			{
+			elsif ($expression =~ /(has|have)\s+many/) {
 				$schema = _has_many ($config, $expression);			
 			}
-			else
-			{    
+			else {    
 				$schema = _has_a ($config, $expression);
 			}
 			$self->{SCHEMA} .= $schema if $schema;
 		}
 	}
-	return $self->{SCHEMA};
+	return $self->{SCHEMA} || '';
 }
 
-sub show
-{
+sub show {
 	my $self = shift;
-	my $schema = $self->parse;
+	my $schema = $self->parse(@_);
 	return unless $schema;
 	my @pretty;
 	
-	foreach my $schema (split /;/, $schema)
-	{
-		if ($schema =~ /CREATE/)
-		{
+	foreach my $schema (split /;/, $schema) {
+		if ($schema =~ /CREATE/) {
 			$schema =~ s/^([^\(]+)\(/$1\(\n\t/g;
 			$schema =~ s/\)([^\)]+)$/\n\)$1/g;
 			$schema =~ s/([^\d]),([^\d])/$1,\n\t$2/g;
@@ -219,8 +195,7 @@ sub show
 	return join "\n\n", @pretty;
 }
 
-sub _as
-{
+sub _as {
 	my $config = shift;
 	my $expression = $config->{format}->{expression}->(shift);
 	my ($table_name, $has, $foreign_table_name, $foreign_key) = split /\s+(has|have)\s+(.*)\s+as\s+(.*)/, $expression;
@@ -248,8 +223,7 @@ sub _as
 	return $schema;
 }
 
-sub _many_to_many
-{
+sub _many_to_many {
 	my $config = shift;
 	my $expression = $config->{format}->{expression}->(shift);
 	$expression =~ s/,\s+vice[\s\-]+versa//;
@@ -267,16 +241,14 @@ sub _many_to_many
 	my $foreign_keys;
 	my @columns = ($config->{primary_key}->{name} . ' ' . $config->{primary_key}->{type}->{$config->{db}->{type}});
 	
-	foreach my $table ($table_name, $foreign_table_name)
-	{
+	foreach my $table ($table_name, $foreign_table_name) {
 		my $foreign_key = $config->{foreign_key}->{singular} ? _singularise($table) : $table;
 		$foreign_key .= $config->{foreign_key}->{suffix};
 		$foreign_keys->{$foreign_key} = $table;
 		push @columns, $foreign_key . ' ' . $config->{foreign_key}->{type}->{$config->{db}->{type}};
 	}
 	
-	foreach my $foreign_key (keys %{$foreign_keys})
-	{
+	foreach my $foreign_key (keys %{$foreign_keys}) {
 		push @columns, _generate_foreign_key_clause($config, $foreign_key, $foreign_keys->{$foreign_key});
 	}
 	
@@ -285,8 +257,7 @@ sub _many_to_many
 	return $schema;
 }
 
-sub _has_many
-{
+sub _has_many {
 	my $config = shift;
 	my $expression = $config->{format}->{expression}->(shift);
 	my ($table_name, $has, $foreign_table_name) = split /\s*(has|have)\s+many\s*/, $expression;
@@ -313,8 +284,7 @@ sub _has_many
 	return $schema;
 }
 
-sub _has_a
-{
+sub _has_a {
 	my $config = shift;
 	my $expression = $config->{format}->{expression}->(shift);
 	my ($table_name, $has, $columns) = ($expression =~ /^([\w_\-0-9\s]+)\s+(has|have)\s+(.*)$/);
@@ -326,13 +296,11 @@ sub _has_a
 	
 	push @{$table->{columns}}, {name => $config->{primary_key}->{name}, type => $config->{primary_key}->{type}->{$config->{db}->{type}}};
 	
-	while ($columns =~ /[()]/)
-	{
+	while ($columns =~ /[()]/) {
 		($foreign_table_name, $foreign_table_columns) = ($columns =~ /([\w_\-0-9\s]+)\s*($RE{balanced}{-parens=>'()'})/);		
 		($foreign_table_columns) = ($foreign_table_columns =~ /\((.*)\)/);
 		
-		if($foreign_table_columns =~ /^\s*(has|have)/)
-		{					
+		if($foreign_table_columns =~ /^\s*(has|have)/) {					
 			$schema .= _has_a($config, join ' ', ($foreign_table_name , $foreign_table_columns));
 			$foreign_table_name = _normalise_table($config, $config->{format}->{table}->($foreign_table_name));
 			my $foreign_key = $config->{foreign_key}->{singular} ? _singularise($foreign_table_name) : $foreign_table_name;
@@ -340,19 +308,24 @@ sub _has_a
 			$foreign_keys->{$foreign_key} = $foreign_table_name;
 			$columns =~ s/(\b[\w_\-0-9\s]*)\b\s*($RE{balanced}{-parens=>'()'})/$foreign_key/;
 		}
-		else
-		{
+		else {
 			$foreign_table_name = $config->{format}->{column}->($foreign_table_name);
 			
-			if ($foreign_table_columns eq 'reference')
-			{
+			if ($foreign_table_columns =~ /^reference/) {
 				my $foreign_key = $foreign_table_name;
-				$foreign_table_name =~ s/$foreign_key_suffix$//;
-				$foreign_table_name = _normalise_table($config, $config->{format}->{table}->($foreign_table_name));								
+				my ($reference_table) = ($foreign_table_columns =~ /^references?\s+([\w_\-0-9\s]+)$/);
+				
+				if ($reference_table) {
+					$foreign_table_name = _normalise_table($config, $config->{format}->{table}->($reference_table));
+				}
+				else {
+					$foreign_table_name =~ s/$foreign_key_suffix$//;
+					$foreign_table_name = _normalise_table($config, $config->{format}->{table}->($foreign_table_name));
+				}
+								
 				$foreign_keys->{$foreign_key} = $foreign_table_name;
 			}
-			elsif (exists $config->{columns}->{$foreign_table_columns})
-			{
+			elsif (exists $config->{columns}->{$foreign_table_columns}) {
 				$custom_columns->{$foreign_table_name} = $config->{columns}->{$foreign_table_columns};
 			}
 			
@@ -360,41 +333,32 @@ sub _has_a
 		}
 	}
 		
-	foreach my $column (split /\s*,\s*/, $columns)
-	{
+	foreach my $column (split /\s*,\s*/, $columns) {
 		$column = $config->{format}->{column}->($column);
-		if (exists $foreign_keys->{$column})
-		{
+		if (exists $foreign_keys->{$column}) {
 			push @{$table->{columns}}, {name => $column, type => $config->{foreign_key}->{type}->{$config->{db}->{type}}};
 		}
-		else
-		{
-			if (exists $custom_columns->{$column})
-			{
+		else {
+			if (exists $custom_columns->{$column}) {
 				push @{$table->{columns}}, {name => $column, type => $custom_columns->{$column}};
 			}
-			elsif (exists $config->{columns}->{$column})
-			{
+			elsif (exists $config->{columns}->{$column}) {
 				push @{$table->{columns}}, {name => $column, type => $config->{columns}->{$column}};
 			}
-			else
-			{
+			else {
 				my $column_type;
-				DEF: foreach my $column_key (keys %{$config->{columns}})
-				{
-					if ($column =~ /$column_key/) # first match
-					{
+				DEF: foreach my $column_key (keys %{$config->{columns}}) {
+					if ($column =~ /$column_key/) {
+						 # first match
 						$column_type = $column_key;
 						last DEF;
 					}
 				}
 				
-				if ($column_type)
-				{
+				if ($column_type) {
 					push @{$table->{columns}}, {name => $column, type => $config->{columns}->{$column_type}};
 				}
-				else
-				{
+				else {
 					push @{$table->{columns}}, {name => $column, type => $config->{columns}->{name}}; # default
 				}
 			} 
@@ -403,8 +367,7 @@ sub _has_a
 	
 	my $schema_columns = [map {$_->{name} . ' ' . $_->{type}} @{$table->{columns}}];
 	
-	foreach my $foreign_key (keys %{$foreign_keys})
-	{		
+	foreach my $foreign_key (keys %{$foreign_keys}) {		
 		push @{$schema_columns}, _generate_foreign_key_clause($config, $foreign_key, $foreign_keys->{$foreign_key});
 	}
 	
@@ -417,8 +380,8 @@ sub _has_a
 	return $schema;
 }
 
-sub _singularise # based on Rose::DB::Object::ConventionManager
-{
+sub _singularise  {
+	# based on Rose::DB::Object::ConventionManager
 	my $word = shift;
 	$word =~ s/ies$/y/i;
 	return $word if ($word =~ s/ses$/s/);
@@ -427,8 +390,7 @@ sub _singularise # based on Rose::DB::Object::ConventionManager
 	return $word;
 }
 
-sub _generate_foreign_key_clause
-{
+sub _generate_foreign_key_clause {
 	my ($config, $foreign_key, $reference_table) = @_;
 	my $foreign_key_clause = $config->{foreign_key}->{clause};
 	$foreign_key_clause =~ s/\[%\s*foreign_key\s*%\]/$foreign_key/;
@@ -437,11 +399,19 @@ sub _generate_foreign_key_clause
 	return $foreign_key_clause;
 }
 
-sub _normalise_table
-{
+sub _normalise_table {
 	my ($config, $table) = @_;
-	return $config->{db}->{table_prefix} . _singularise($table) if $config->{db}->{tables_are_singular};
-	return $config->{db}->{table_prefix} . Lingua::EN::Inflect::PL(_singularise($table));
+	my $table_name;
+	
+	if ($config->{db}->{tables_are_singular}) {
+		$table_name = _singularise($table);
+	}
+	else {
+		$table_name = Lingua::EN::Inflect::PL(_singularise($table));
+	}
+	
+	return $config->{db}->{table_prefix} . $table_name if defined $config->{db}->{table_prefix};
+	return $table_name;
 }
 
 1;
@@ -628,7 +598,20 @@ The above expression is equivalent to:
 
   'Position has title and description. Employee has first name, last name, email, and position ID (reference).'
 
-The '(reference)' clause indicates that the attribute 'position ID' is a foreign key.
+The '(reference)' clause indicates that the attribute 'position ID' is a foreign key that references a table called 'position', assuming that table names are singular and no table prefix is defined.
+
+We can also explicitly specify the actual referenced table. For instance, the expression:
+
+  'A project has a name and a main task ID (references task)'
+
+generates the following table schema for MySQL:
+
+  CREATE TABLE project (
+    id INTEGER NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(255),
+    main_task_id INTEGER,
+    FOREIGN KEY (main_task_id) REFERENCES task (id) ON UPDATE CASCADE ON DELETE CASCADE
+  ) TYPE=INNODB;
 
 We can explicitly assign a column definition to an attribute, which ultimately determines the data type of the column. For instance:
 

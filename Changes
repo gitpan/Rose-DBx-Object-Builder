@@ -1,5 +1,9 @@
 Revision history for Rose-DBx-Object-Builder
 
+0.08    07/11/2010
+        Added 'references table name' syntax.
+        Added tests.
+        Updated POD.
 0.07    16/03/2010
         Moved 'table_prefix' into the 'db' option within the config hash in order to be consistent with Rose::DBx::Object::Renderer(Suggested by Stewart Heckenberg).
 0.06    11/08/2009
