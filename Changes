@@ -1,5 +1,7 @@
 Revision history for Rose-DBx-Object-Builder
 
+0.09    20/11/2010
+        Added 'required' and 'boolean' column types.
 0.08    07/11/2010
         Added 'references table name' syntax.
         Added tests.

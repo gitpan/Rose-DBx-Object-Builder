@@ -12,8 +12,8 @@ use Lingua::EN::Inflect 'PL';
 use Regexp::Common;
 use DBI;
 
-our $VERSION = 0.08;
-# 11.9
+our $VERSION = 0.09;
+# 12.9
 
 sub config {
 	my $self = shift;
@@ -78,6 +78,7 @@ sub config {
 			columns => {
 				name => 'VARCHAR(255)',
 				unique => 'VARCHAR(255) UNIQUE',
+				required => 'VARCHAR(255) NOT NULL',
 				text => 'TEXT',
 				integer => 'INTEGER',
 				number => 'NUMERIC',
@@ -85,6 +86,7 @@ sub config {
 				time => 'TIME',
 				timestamp => 'TIMESTAMP',
 				money => 'DECIMAL(13,2)',
+				boolean => 'BOOLEAN',
 			}
 		};
 		
